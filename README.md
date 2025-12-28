@@ -6,8 +6,9 @@ Features
 - Progress bar visualization
 - Filters: All / Completed / Pending
 - Local Storage persistence
-- Mobile responsive design
 Technologies Used
 - HTML
 - CSS
 - JavaScript
+Live Demo
+(Open index.html in browser or deploy using GitHub Pages)
