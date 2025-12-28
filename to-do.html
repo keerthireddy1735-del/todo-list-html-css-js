@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>To-Do List</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: #f4f6f8;
+  margin: 0;
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+.todo-container {
+  background: #fff;
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Progress */
+.progress-container {
+  margin-bottom: 15px;
+}
+
+#progressText {
+  text-align: center;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#progressFill {
+  height: 100%;
+  width: 0%;
+  background: #22c55e;
+  transition: width 0.3s ease;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.filters button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #e5e7eb;
+}
+
+/* Input */
+form {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.add-btn {
+  padding: 14px 16px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+}
+
+/* Tasks */
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+li {
+  background: #f1f5f9;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+li.completed span {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.task-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  color: white;
+}
+
+.complete { background: #22c55e; }
+.edit { background: #0ea5e9; }
+.delete { background: #ef4444; }
+
+/* Mobile */
+@media (max-width: 480px) {
+  form {
+    flex-direction: column;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="todo-container">
+
+<h2>My To-Do List</h2>
+
+<div class="progress-container">
+  <div id="progressText">0% Completed</div>
+  <div class="progress-bar">
+    <div id="progressFill"></div>
+  </div>
+</div>
+
+<div class="filters">
+  <button onclick="filterTasks('all')">All</button>
+  <button onclick="filterTasks('completed')">Completed</button>
+  <button onclick="filterTasks('pending')">Pending</button>
+</div>
+
+<!-- ✅ FORM FIX -->
+<form onsubmit="addTask(event)">
+  <input id="taskInput" placeholder="Enter a task" />
+  <button class="add-btn" type="submit">Add</button>
+</form>
+
+<ul id="taskList"></ul>
+</div>
+
+<script>
+const input = document.getElementById("taskInput");
+const list = document.getElementById("taskList");
+
+document.addEventListener("DOMContentLoaded", renderTasks);
+
+function getTasks() {
+  return JSON.parse(localStorage.getItem("tasks")) || [];
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function addTask(e) {
+  e.preventDefault(); // 🔑 MOBILE FIX
+  const text = input.value.trim();
+  if (!text) return;
+
+  const tasks = getTasks();
+  tasks.push({ text, completed: false });
+  saveTasks(tasks);
+
+  input.value = "";
+  renderTasks();
+}
+
+function renderTasks() {
+  list.innerHTML = "";
+  const tasks = getTasks();
+
+  tasks.forEach((task, i) => {
+    const li = document.createElement("li");
+    if (task.completed) li.classList.add("completed");
+
+    li.innerHTML = `
+      <div class="task-row">
+        <span>${task.text}</span>
+        <div class="actions">
+          <button class="complete" onclick="toggle(${i})">✓</button>
+          <button class="edit" onclick="editTask(${i})">✎</button>
+          <button class="delete" onclick="removeTask(${i})">✕</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+
+  updateProgress();
+}
+
+function toggle(i) {
+  const tasks = getTasks();
+  tasks[i].completed = !tasks[i].completed;
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function editTask(i) {
+  const tasks = getTasks();
+  const text = prompt("Edit task", tasks[i].text);
+  if (text) {
+    tasks[i].text = text.trim();
+    saveTasks(tasks);
+    renderTasks();
+  }
+}
+
+function removeTask(i) {
+  const tasks = getTasks();
+  tasks.splice(i, 1);
+  saveTasks(tasks);
+  renderTasks();
+}
+
+function filterTasks(type) {
+  document.querySelectorAll("li").forEach(li => {
+    const done = li.classList.contains("completed");
+    li.style.display =
+      type === "all" ||
+      (type === "completed" && done) ||
+      (type === "pending" && !done)
+      ? "block"
+      : "none";
+  });
+}
+
+function updateProgress() {
+  const tasks = getTasks();
+  const done = tasks.filter(t => t.completed).length;
+  const percent = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+  document.getElementById("progressFill").style.width = percent + "%";
+  document.getElementById("progressText").textContent = percent + "% Completed";
+}
+</script>
+</body>
+</html>
